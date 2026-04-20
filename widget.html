@@ -1,42 +1,40 @@
-ZOHO.embeddedApp.on("PageLoad", function(data){
-ZOHO.CRM.INTERACTION.getPageInfo()
-.then(function(info){
-console.log("info:", info);
-console.log("EntityData:", info.EntityData);
-try{
-const record = info.EntityData || {};
-const phone =
-record.Mobile ||
-record.Phone ||
-null;
-if(!phone){
-document.getElementById("phoneDisplay").innerHTML =
-"No phone found";
-return;
-}
-document.getElementById("phoneDisplay").innerHTML =
-phone;
-document.getElementById("btn").disabled=false;
-const cleaned =
-phone.replace(/\D/g,'');
-const final =
-cleaned.length==10
-? "+1"+cleaned
-: "+"+cleaned;
-const gvUrl =
-"https://voice.google.com/u/0/calls?a=nc,"+
-encodeURIComponent(final);
-document.getElementById("btn").onclick=function(){
-window.parent.postMessage({
-type:"GV_OPEN",
-url:gvUrl
-},"*");
-};
-}
-catch(e){
-document.getElementById("phoneDisplay").innerHTML =
-"error reading record";
-console.log(e);
-}
-});
+ZOHO.embeddedApp.on("PageLoad", async function(data){
+  console.log("data:", data);
+  const recordId = data.EntityId ? data.EntityId[0] : null;
+  const entity = data.Entity;
+  
+  if(!recordId){
+    document.getElementById("phoneDisplay").innerHTML = "No record ID";
+    return;
+  }
+
+  try {
+    const resp = await ZOHO.CRM.API.getRecord({
+      Entity: entity,
+      RecordID: recordId
+    });
+    
+    console.log("record:", resp.data[0]);
+    const record = resp.data[0];
+    const phone = record.Mobile || record.Phone;
+    
+    if(!phone){
+      document.getElementById("phoneDisplay").innerHTML = "No phone";
+      return;
+    }
+    
+    document.getElementById("phoneDisplay").innerHTML = phone;
+    document.getElementById("btn").disabled = false;
+    
+    const cleaned = phone.replace(/\D/g,'');
+    const final = cleaned.length==10 ? "+1"+cleaned : "+"+cleaned;
+    const gvUrl = "https://voice.google.com/u/0/calls?a=nc,"+encodeURIComponent(final);
+    
+    document.getElementById("btn").onclick = function(){
+      window.parent.postMessage({type:"GV_OPEN", url:gvUrl}, "*");
+    };
+  } catch(e) {
+    document.getElementById("phoneDisplay").innerHTML = "Error: "+e.message;
+    console.log(e);
+  }
 });
