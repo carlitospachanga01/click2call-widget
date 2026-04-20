@@ -2,151 +2,75 @@
 <html>
 <head>
 <meta charset="utf-8">
-<script src="https://live.zwidgets.com/js-sdk/1.0/ZohoEmbededAppSDK.min.js"></script>
-
+<script src="https://live.zwidgets.com/js-sdk/1.5/ZohoEmbededAppSDK.min.js"></script>
 <style>
-body{
-  font-family:Arial;
-  background:#f5f5f5;
-  padding:20px;
-}
-
-.box{
-  background:white;
-  padding:20px;
-  border-radius:8px;
-  width:320px;
-  box-shadow:0 1px 3px rgba(0,0,0,0.1);
-}
-
-.phone{
-  background:#eee;
-  padding:10px;
-  border-radius:5px;
-  margin-bottom:10px;
-  word-break:break-word;
-}
-
-button{
-  width:100%;
-  padding:10px;
-  background:#1a73e8;
-  color:white;
-  border:0;
-  border-radius:5px;
-  cursor:pointer;
-}
-
-button:disabled{
-  background:#ccc;
-  cursor:not-allowed;
-}
-
-.debug{
-  margin-top:12px;
-  font-size:12px;
-  color:#444;
-  background:#f7f7f7;
-  border:1px solid #ddd;
-  border-radius:5px;
-  padding:10px;
-  white-space:pre-wrap;
-  word-break:break-word;
-  max-height:260px;
-  overflow:auto;
-}
+body{font-family:Arial;background:#f5f5f5;padding:20px;}
+.box{background:white;padding:20px;border-radius:8px;width:260px;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+.phone{background:#eee;padding:10px;border-radius:5px;margin-bottom:10px;font-weight:bold;}
+button{width:100%;padding:10px;background:#1a73e8;color:white;border:0;border-radius:5px;cursor:pointer;}
+button:disabled{background:#ccc;}
+.error{color:red;font-size:12px;}
 </style>
 </head>
 <body>
-
 <div class="box">
-
   <div id="phoneDisplay" class="phone">loading...</div>
-
   <button id="btn" disabled>Open Google Voice</button>
-
-  <div id="debug" class="debug">debug starting...</div>
-
+  <div id="error" class="error"></div>
 </div>
-
 <script>
-function dbg(label, value){
-  var el = document.getElementById("debug");
-  var text = label;
-
-  if (typeof value !== "undefined") {
-    try {
-      text += ": " + JSON.stringify(value, null, 2);
-    } catch(e) {
-      text += ": " + String(value);
-    }
-  }
-
-  el.textContent += "\n\n" + text;
-  console.log(label, value);
-}
-
 ZOHO.embeddedApp.on("PageLoad", function(data){
-  dbg("PageLoad data", data);
-
-  if (!ZOHO || !ZOHO.CRM || !ZOHO.CRM.INTERACTION) {
-    document.getElementById("phoneDisplay").innerHTML = "INTERACTION missing";
-    dbg("ERROR", "ZOHO.CRM.INTERACTION no existe");
+  console.log("PAGE LOAD DATA:", JSON.stringify(data));
+  
+  // En Blueprint, EntityId viene en un array
+  const recordId = data.EntityIds ? data.EntityIds[0] : data.EntityId;
+  const moduleName = data.Entity; // "Leads" or "Lead"
+  
+  if(!recordId) {
+    document.getElementById("error").innerHTML = "No record ID found";
     return;
   }
-
-  ZOHO.CRM.INTERACTION.getPageInfo()
-    .then(function(info){
-      dbg("getPageInfo result", info);
-
-      try{
-        var record = (info && info.EntityData) ? info.EntityData : {};
-        var phone = record.Mobile || record.Phone || null;
-
-        if(!phone){
-          document.getElementById("phoneDisplay").innerHTML = "No phone found";
-          dbg("EntityData used", record);
-          return;
-        }
-
-        document.getElementById("phoneDisplay").innerHTML = phone;
-        document.getElementById("btn").disabled = false;
-
-        var cleaned = String(phone).replace(/\D/g,'');
-        var final = cleaned.length == 10 ? "+1" + cleaned : "+" + cleaned;
-        var gvUrl = "https://voice.google.com/u/0/calls?a=nc," + encodeURIComponent(final);
-
-        dbg("Final GV URL", gvUrl);
-
-        document.getElementById("btn").onclick = function(){
-          dbg("Posting message", { type:"GV_OPEN", url:gvUrl });
-
-          window.parent.postMessage({
-            type:"GV_OPEN",
-            url:gvUrl
-          }, "*");
-        };
+  
+  // Llamar a getRecord para obtener los datos del Lead
+  ZOHO.CRM.API.getRecord({Entity: moduleName, RecordID: recordId})
+    .then(function(response){
+      console.log("RECORD RESPONSE:", JSON.stringify(response));
+      
+      // response.data es un array
+      if(!response.data || !response.data[0]) {
+        document.getElementById("error").innerHTML = "No record data returned";
+        return;
       }
-      catch(e){
-        document.getElementById("phoneDisplay").innerHTML = "error";
-        dbg("CATCH inside then", e && e.message ? e.message : e);
+      
+      const record = response.data[0];
+      const phone = record.Phone || record.Mobile;
+      
+      console.log("PHONE FOUND:", phone);
+      
+      if(!phone) {
+        document.getElementById("phoneDisplay").innerHTML = "No phone number";
+        return;
       }
+      
+      document.getElementById("phoneDisplay").innerHTML = phone;
+      document.getElementById("btn").disabled = false;
+      
+      // Limpiar el número y construir URL de Google Voice
+      const cleaned = phone.replace(/\D/g, '');
+      const formatted = cleaned.length === 10 ? "+1" + cleaned : "+" + cleaned;
+      const gvUrl = "https://voice.google.com/u/0/calls?a=nc," + encodeURIComponent(formatted);
+      
+      document.getElementById("btn").onclick = function(){
+        window.parent.postMessage({type:"GV_OPEN", url: gvUrl}, "*");
+      };
     })
     .catch(function(err){
-      document.getElementById("phoneDisplay").innerHTML = "getPageInfo failed";
-      dbg("getPageInfo ERROR", err && err.message ? err.message : err);
+      console.log("ERROR FETCHING RECORD:", err);
+      document.getElementById("error").innerHTML = "Error: " + JSON.stringify(err);
     });
 });
 
-ZOHO.embeddedApp.init()
-  .then(function(){
-    dbg("init", "ok");
-  })
-  .catch(function(err){
-    document.getElementById("phoneDisplay").innerHTML = "init failed";
-    dbg("init ERROR", err && err.message ? err.message : err);
-  });
+ZOHO.embeddedApp.init();
 </script>
-
 </body>
 </html>
