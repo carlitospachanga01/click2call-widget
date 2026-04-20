@@ -1,40 +1,162 @@
-ZOHO.embeddedApp.on("PageLoad", async function(data){
-  console.log("data:", data);
-  const recordId = data.EntityId ? data.EntityId[0] : null;
-  const entity = data.Entity;
-  
-  if(!recordId){
-    document.getElementById("phoneDisplay").innerHTML = "No record ID";
-    return;
-  }
+<!DOCTYPE html>
+<html>
 
-  try {
-    const resp = await ZOHO.CRM.API.getRecord({
-      Entity: entity,
-      RecordID: recordId
-    });
-    
-    console.log("record:", resp.data[0]);
-    const record = resp.data[0];
-    const phone = record.Mobile || record.Phone;
-    
-    if(!phone){
-      document.getElementById("phoneDisplay").innerHTML = "No phone";
-      return;
-    }
-    
-    document.getElementById("phoneDisplay").innerHTML = phone;
-    document.getElementById("btn").disabled = false;
-    
-    const cleaned = phone.replace(/\D/g,'');
-    const final = cleaned.length==10 ? "+1"+cleaned : "+"+cleaned;
-    const gvUrl = "https://voice.google.com/u/0/calls?a=nc,"+encodeURIComponent(final);
-    
-    document.getElementById("btn").onclick = function(){
-      window.parent.postMessage({type:"GV_OPEN", url:gvUrl}, "*");
-    };
-  } catch(e) {
-    document.getElementById("phoneDisplay").innerHTML = "Error: "+e.message;
-    console.log(e);
-  }
+<head>
+
+<meta charset="utf-8">
+
+<script src="https://live.zwidgets.com/js-sdk/1.0/ZohoEmbededAppSDK.min.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f5f5f5;
+padding:20px;
+}
+
+.box{
+background:white;
+padding:20px;
+border-radius:8px;
+width:260px;
+box-shadow:0 1px 3px rgba(0,0,0,0.1);
+}
+
+.phone{
+background:#eee;
+padding:10px;
+border-radius:5px;
+margin-bottom:10px;
+}
+
+button{
+width:100%;
+padding:10px;
+background:#1a73e8;
+color:white;
+border:0;
+border-radius:5px;
+cursor:pointer;
+}
+
+button:disabled{
+background:#ccc;
+cursor:not-allowed;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="box">
+
+<div id="phoneDisplay" class="phone">
+
+loading...
+
+</div>
+
+<button id="btn" disabled>
+
+Open Google Voice
+
+</button>
+
+</div>
+
+
+<script>
+
+ZOHO.embeddedApp.on("PageLoad", function(data){
+
+try{
+
+const recordId = data.EntityId[0];
+const moduleName = data.Entity;
+
+ZOHO.CRM.API.getRecord({
+
+Entity: moduleName,
+RecordID: recordId
+
+})
+
+.then(function(response){
+
+const record = response.data[0];
+
+const phone =
+record.Mobile ||
+record.Phone ||
+null;
+
+
+if(!phone){
+
+document.getElementById("phoneDisplay").innerHTML =
+"No phone found";
+
+return;
+
+}
+
+
+document.getElementById("phoneDisplay").innerHTML =
+phone;
+
+document.getElementById("btn").disabled=false;
+
+
+const cleaned =
+phone.replace(/\D/g,'');
+
+
+const final =
+cleaned.length==10
+? "+1"+cleaned
+: "+"+cleaned;
+
+
+const gvUrl =
+"https://voice.google.com/u/0/calls?a=nc,"+
+encodeURIComponent(final);
+
+
+
+document.getElementById("btn").onclick=function(){
+
+window.parent.postMessage({
+
+type:"GV_OPEN",
+url:gvUrl
+
+},"*");
+
+};
+
 });
+
+}
+catch(e){
+
+document.getElementById("phoneDisplay").innerHTML =
+"error";
+
+console.log(e);
+
+}
+
+});
+
+
+ZOHO.embeddedApp.init();
+
+</script>
+
+
+</body>
+
+</html>
