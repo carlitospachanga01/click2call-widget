@@ -19,7 +19,7 @@ padding:20px;
 background:white;
 padding:20px;
 border-radius:8px;
-width:260px;
+width:280px;
 box-shadow:0 1px 3px rgba(0,0,0,0.1);
 }
 
@@ -28,6 +28,8 @@ background:#eee;
 padding:10px;
 border-radius:5px;
 margin-bottom:10px;
+font-size:13px;
+word-break:break-all;
 }
 
 button{
@@ -43,6 +45,13 @@ cursor:pointer;
 button:disabled{
 background:#ccc;
 cursor:not-allowed;
+}
+
+.debug{
+margin-top:10px;
+font-size:11px;
+color:#666;
+white-space:pre-wrap;
 }
 
 </style>
@@ -65,28 +74,70 @@ Open Google Voice
 
 </button>
 
+<div id="debug" class="debug"></div>
+
 </div>
 
 
 <script>
 
-ZOHO.embeddedApp.on("PageLoad", function(data){
+function log(msg){
+
+document.getElementById("debug").innerHTML += msg + "\n";
+
+console.log(msg);
+
+}
+
+
+ZOHO.embeddedApp.on("PageLoad", async function(data){
+
+log("PageLoad fired");
+
+log(JSON.stringify(data,null,2));
 
 try{
 
-const recordId = data.EntityId[0];
-const moduleName = data.Entity;
+const recordId =
+data.EntityId ?
+data.EntityId[0] :
+null;
 
-ZOHO.CRM.API.getRecord({
+const entity =
+data.Entity ||
+"Leads";
 
-Entity: moduleName,
+
+if(!recordId){
+
+document.getElementById("phoneDisplay").innerHTML =
+"No record ID";
+
+log("No recordId found");
+
+return;
+
+}
+
+
+log("Fetching record...");
+
+
+const resp =
+await ZOHO.CRM.API.getRecord({
+
+Entity: entity,
 RecordID: recordId
 
-})
+});
 
-.then(function(response){
 
-const record = response.data[0];
+log(JSON.stringify(resp,null,2));
+
+
+const record =
+resp.data[0];
+
 
 const phone =
 record.Mobile ||
@@ -97,7 +148,9 @@ null;
 if(!phone){
 
 document.getElementById("phoneDisplay").innerHTML =
-"No phone found";
+"No phone";
+
+log("Phone not found in record");
 
 return;
 
@@ -125,8 +178,9 @@ const gvUrl =
 encodeURIComponent(final);
 
 
-
 document.getElementById("btn").onclick=function(){
+
+log("Sending event to extension");
 
 window.parent.postMessage({
 
@@ -137,15 +191,15 @@ url:gvUrl
 
 };
 
-});
-
 }
 catch(e){
 
 document.getElementById("phoneDisplay").innerHTML =
-"error";
+"ERROR";
 
-console.log(e);
+log(e.message);
+
+log(JSON.stringify(e,null,2));
 
 }
 
