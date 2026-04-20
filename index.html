@@ -67,24 +67,30 @@ Open Google Voice
 
 ZOHO.embeddedApp.on("PageLoad", function(data){
 
+ZOHO.CRM.INTERACTION.getPageInfo()
+
+.then(function(info){
+
 try{
 
 const record =
-data.EntityData || {};
+info.EntityData || {};
 
 const phone =
 record.Mobile ||
 record.Phone ||
 null;
 
+
 if(!phone){
 
 document.getElementById("phoneDisplay").innerHTML =
-"No phone in blueprint";
+"No phone found";
 
 return;
 
 }
+
 
 document.getElementById("phoneDisplay").innerHTML =
 phone;
@@ -94,6 +100,7 @@ document.getElementById("btn").disabled=false;
 
 const cleaned =
 phone.replace(/\D/g,'');
+
 
 const final =
 cleaned.length==10
@@ -129,10 +136,13 @@ console.log(e);
 
 });
 
+});
+
 
 ZOHO.embeddedApp.init();
 
 </script>
 
 </body>
+
 </html>
