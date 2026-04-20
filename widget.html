@@ -1,128 +1,42 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<script src="https://live.zwidgets.com/js-sdk/1.0/ZohoEmbededAppSDK.min.js"></script>
-
-<style>
-body{
-font-family:Arial;
-background:#f5f5f5;
-padding:20px;
-}
-
-.box{
-background:white;
-padding:20px;
-border-radius:8px;
-width:260px;
-}
-
-button{
-width:100%;
-padding:10px;
-background:#1a73e8;
-color:white;
-border:0;
-border-radius:5px;
-cursor:pointer;
-}
-
-.phone{
-margin-bottom:10px;
-background:#eee;
-padding:8px;
-border-radius:5px;
-}
-</style>
-
-</head>
-
-<body>
-
-<div class="box">
-
-<div class="phone" id="phoneDisplay">
-loading...
-</div>
-
-<button id="btn" disabled>
-Open Google Voice
-</button>
-
-</div>
-
-<script>
-
-ZOHO.embeddedApp.on("PageLoad", async function(data){
-
+ZOHO.embeddedApp.on("PageLoad", function(data){
+ZOHO.CRM.INTERACTION.getPageInfo()
+.then(function(info){
+console.log("info:", info);
+console.log("EntityData:", info.EntityData);
 try{
-
-const id = data.EntityId[0];
-
-const record = await ZOHO.CRM.API.getRecord({
-
-Entity:data.Entity,
-RecordID:id
-
-});
-
+const record = info.EntityData || {};
 const phone =
-record.data[0].Mobile ||
-record.data[0].Phone ||
+record.Mobile ||
+record.Phone ||
 null;
-
 if(!phone){
-
 document.getElementById("phoneDisplay").innerHTML =
-"No phone";
-
+"No phone found";
 return;
-
 }
-
 document.getElementById("phoneDisplay").innerHTML =
 phone;
-
 document.getElementById("btn").disabled=false;
-
-const cleaned = phone.replace(/\D/g,'');
-
+const cleaned =
+phone.replace(/\D/g,'');
 const final =
 cleaned.length==10
 ? "+1"+cleaned
 : "+"+cleaned;
-
-const url =
+const gvUrl =
 "https://voice.google.com/u/0/calls?a=nc,"+
 encodeURIComponent(final);
-
 document.getElementById("btn").onclick=function(){
-
 window.parent.postMessage({
-
 type:"GV_OPEN",
-url:url
-
+url:gvUrl
 },"*");
-
 };
-
 }
 catch(e){
-
 document.getElementById("phoneDisplay").innerHTML =
-"error";
-
+"error reading record";
 console.log(e);
-
 }
-
 });
-
-ZOHO.embeddedApp.init();
-
-</script>
-
-</body>
-</html>
+});
