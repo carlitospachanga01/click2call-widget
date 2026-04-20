@@ -5,7 +5,7 @@
 
 <meta charset="UTF-8">
 
-<script src="https://live.zwidgets.com/js-sdk/1.0/ZohoEmbededAppSDK.min.js"></script>
+<script src="https://static.zohocdn.com/zohocrm/v2/javascript/sdk/ZohoEmbededAppSDK.min.js"></script>
 
 <style>
 
@@ -19,7 +19,7 @@ padding:20px;
 background:white;
 padding:20px;
 border-radius:8px;
-width:300px;
+width:280px;
 box-shadow:0 1px 3px rgba(0,0,0,0.1);
 }
 
@@ -55,7 +55,7 @@ background:#ccc;
 
 <div id="phoneDisplay" class="phone">
 
-waiting for zoho...
+loading...
 
 </div>
 
@@ -70,25 +70,27 @@ Open Google Voice
 
 <script>
 
-document.getElementById("phoneDisplay").innerHTML =
-"widget loaded";
-
-
 ZOHO.embeddedApp.on("PageLoad",function(data){
 
-document.getElementById("phoneDisplay").innerHTML =
-"Blueprint detected";
+const record =
+data.EntityData || {};
 
-
-if(data && data.EntityData){
 
 const phone =
-data.EntityData.Mobile ||
-data.EntityData.Phone ||
+record.Mobile ||
+record.Phone ||
 null;
 
 
-if(phone){
+if(!phone){
+
+document.getElementById("phoneDisplay").innerHTML =
+"No phone in blueprint";
+
+return;
+
+}
+
 
 document.getElementById("phoneDisplay").innerHTML =
 phone;
@@ -121,22 +123,6 @@ url:gvUrl
 },"*");
 
 };
-
-}
-else{
-
-document.getElementById("phoneDisplay").innerHTML =
-"no phone in blueprint";
-
-}
-
-}
-else{
-
-document.getElementById("phoneDisplay").innerHTML =
-"no entityData";
-
-}
 
 });
 
