@@ -1,76 +1,151 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta charset="utf-8">
-<script src="https://live.zwidgets.com/js-sdk/1.5/ZohoEmbededAppSDK.min.js"></script>
+
+<meta charset="UTF-8">
+
+<script src="https://live.zwidgets.com/js-sdk/1.0/ZohoEmbededAppSDK.min.js"></script>
+
 <style>
-body{font-family:Arial;background:#f5f5f5;padding:20px;}
-.box{background:white;padding:20px;border-radius:8px;width:260px;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
-.phone{background:#eee;padding:10px;border-radius:5px;margin-bottom:10px;font-weight:bold;}
-button{width:100%;padding:10px;background:#1a73e8;color:white;border:0;border-radius:5px;cursor:pointer;}
-button:disabled{background:#ccc;}
-.error{color:red;font-size:12px;}
+
+body{
+font-family:Arial;
+background:#f5f5f5;
+padding:20px;
+}
+
+.box{
+background:white;
+padding:20px;
+border-radius:8px;
+width:300px;
+box-shadow:0 1px 3px rgba(0,0,0,0.1);
+}
+
+.phone{
+background:#eee;
+padding:10px;
+border-radius:5px;
+margin-bottom:10px;
+}
+
+button{
+width:100%;
+padding:10px;
+background:#1a73e8;
+color:white;
+border:0;
+border-radius:5px;
+cursor:pointer;
+}
+
+button:disabled{
+background:#ccc;
+}
+
 </style>
+
 </head>
+
+
 <body>
+
 <div class="box">
-  <div id="phoneDisplay" class="phone">loading...</div>
-  <button id="btn" disabled>Open Google Voice</button>
-  <div id="error" class="error"></div>
+
+<div id="phoneDisplay" class="phone">
+
+waiting for zoho...
+
 </div>
+
+<button id="btn" disabled>
+
+Open Google Voice
+
+</button>
+
+</div>
+
+
 <script>
-ZOHO.embeddedApp.on("PageLoad", function(data){
-  console.log("PAGE LOAD DATA:", JSON.stringify(data));
-  
-  // En Blueprint, EntityId viene en un array
-  const recordId = data.EntityIds ? data.EntityIds[0] : data.EntityId;
-  const moduleName = data.Entity; // "Leads" or "Lead"
-  
-  if(!recordId) {
-    document.getElementById("error").innerHTML = "No record ID found";
-    return;
-  }
-  
-  // Llamar a getRecord para obtener los datos del Lead
-  ZOHO.CRM.API.getRecord({Entity: moduleName, RecordID: recordId})
-    .then(function(response){
-      console.log("RECORD RESPONSE:", JSON.stringify(response));
-      
-      // response.data es un array
-      if(!response.data || !response.data[0]) {
-        document.getElementById("error").innerHTML = "No record data returned";
-        return;
-      }
-      
-      const record = response.data[0];
-      const phone = record.Phone || record.Mobile;
-      
-      console.log("PHONE FOUND:", phone);
-      
-      if(!phone) {
-        document.getElementById("phoneDisplay").innerHTML = "No phone number";
-        return;
-      }
-      
-      document.getElementById("phoneDisplay").innerHTML = phone;
-      document.getElementById("btn").disabled = false;
-      
-      // Limpiar el número y construir URL de Google Voice
-      const cleaned = phone.replace(/\D/g, '');
-      const formatted = cleaned.length === 10 ? "+1" + cleaned : "+" + cleaned;
-      const gvUrl = "https://voice.google.com/u/0/calls?a=nc," + encodeURIComponent(formatted);
-      
-      document.getElementById("btn").onclick = function(){
-        window.parent.postMessage({type:"GV_OPEN", url: gvUrl}, "*");
-      };
-    })
-    .catch(function(err){
-      console.log("ERROR FETCHING RECORD:", err);
-      document.getElementById("error").innerHTML = "Error: " + JSON.stringify(err);
-    });
+
+document.getElementById("phoneDisplay").innerHTML =
+"widget loaded";
+
+
+ZOHO.embeddedApp.on("PageLoad",function(data){
+
+document.getElementById("phoneDisplay").innerHTML =
+"Blueprint detected";
+
+
+if(data && data.EntityData){
+
+const phone =
+data.EntityData.Mobile ||
+data.EntityData.Phone ||
+null;
+
+
+if(phone){
+
+document.getElementById("phoneDisplay").innerHTML =
+phone;
+
+document.getElementById("btn").disabled=false;
+
+
+const cleaned =
+phone.replace(/\D/g,'');
+
+
+const final =
+cleaned.length==10
+? "+1"+cleaned
+: "+"+cleaned;
+
+
+const gvUrl =
+"https://voice.google.com/u/0/calls?a=nc,"+
+encodeURIComponent(final);
+
+
+document.getElementById("btn").onclick=function(){
+
+window.parent.postMessage({
+
+type:"GV_OPEN",
+url:gvUrl
+
+},"*");
+
+};
+
+}
+else{
+
+document.getElementById("phoneDisplay").innerHTML =
+"no phone in blueprint";
+
+}
+
+}
+else{
+
+document.getElementById("phoneDisplay").innerHTML =
+"no entityData";
+
+}
+
 });
 
+
 ZOHO.embeddedApp.init();
+
 </script>
+
+
 </body>
+
 </html>
