@@ -1,44 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="https://live.zwidgets.com/js-sdk/1.0/ZohoEmbededAppSDK.min.js"></script>
+
+<style>
+body{
+  font-family:Arial;
+  background:#f5f5f5;
+  padding:20px;
+}
+
+.box{
+  background:white;
+  padding:20px;
+  border-radius:8px;
+  width:320px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.1);
+}
+
+.phone{
+  background:#eee;
+  padding:10px;
+  border-radius:5px;
+  margin-bottom:10px;
+  word-break:break-word;
+}
+
+button{
+  width:100%;
+  padding:10px;
+  background:#1a73e8;
+  color:white;
+  border:0;
+  border-radius:5px;
+  cursor:pointer;
+}
+
+button:disabled{
+  background:#ccc;
+  cursor:not-allowed;
+}
+
+.debug{
+  margin-top:12px;
+  font-size:12px;
+  color:#444;
+  background:#f7f7f7;
+  border:1px solid #ddd;
+  border-radius:5px;
+  padding:10px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  max-height:260px;
+  overflow:auto;
+}
+</style>
+</head>
+<body>
+
+<div class="box">
+
+  <div id="phoneDisplay" class="phone">loading...</div>
+
+  <button id="btn" disabled>Open Google Voice</button>
+
+  <div id="debug" class="debug">debug starting...</div>
+
+</div>
+
 <script>
+function dbg(label, value){
+  var el = document.getElementById("debug");
+  var text = label;
+
+  if (typeof value !== "undefined") {
+    try {
+      text += ": " + JSON.stringify(value, null, 2);
+    } catch(e) {
+      text += ": " + String(value);
+    }
+  }
+
+  el.textContent += "\n\n" + text;
+  console.log(label, value);
+}
+
 ZOHO.embeddedApp.on("PageLoad", function(data){
-  console.log("PAGE LOAD DATA:", JSON.stringify(data));
-  
+  dbg("PageLoad data", data);
+
+  if (!ZOHO || !ZOHO.CRM || !ZOHO.CRM.INTERACTION) {
+    document.getElementById("phoneDisplay").innerHTML = "INTERACTION missing";
+    dbg("ERROR", "ZOHO.CRM.INTERACTION no existe");
+    return;
+  }
+
   ZOHO.CRM.INTERACTION.getPageInfo()
-  .then(function(info){
-    console.log("PAGE INFO:", JSON.stringify(info));
-    
-    try{
-      const record = info.EntityData || {};
-      console.log("RECORD:", JSON.stringify(record));
-      
-      const phone = record.Mobile || record.Phone || null;
-      console.log("PHONE:", phone);
-      
-      if(!phone){
-        document.getElementById("phoneDisplay").innerHTML = "No phone found";
-        return;
+    .then(function(info){
+      dbg("getPageInfo result", info);
+
+      try{
+        var record = (info && info.EntityData) ? info.EntityData : {};
+        var phone = record.Mobile || record.Phone || null;
+
+        if(!phone){
+          document.getElementById("phoneDisplay").innerHTML = "No phone found";
+          dbg("EntityData used", record);
+          return;
+        }
+
+        document.getElementById("phoneDisplay").innerHTML = phone;
+        document.getElementById("btn").disabled = false;
+
+        var cleaned = String(phone).replace(/\D/g,'');
+        var final = cleaned.length == 10 ? "+1" + cleaned : "+" + cleaned;
+        var gvUrl = "https://voice.google.com/u/0/calls?a=nc," + encodeURIComponent(final);
+
+        dbg("Final GV URL", gvUrl);
+
+        document.getElementById("btn").onclick = function(){
+          dbg("Posting message", { type:"GV_OPEN", url:gvUrl });
+
+          window.parent.postMessage({
+            type:"GV_OPEN",
+            url:gvUrl
+          }, "*");
+        };
       }
-      
-      document.getElementById("phoneDisplay").innerHTML = phone;
-      document.getElementById("btn").disabled=false;
-      
-      const cleaned = phone.replace(/\D/g,'');
-      const final = cleaned.length==10 ? "+1"+cleaned : "+"+cleaned;
-      const gvUrl = "https://voice.google.com/u/0/calls?a=nc,"+encodeURIComponent(final);
-      
-      document.getElementById("btn").onclick=function(){
-        window.parent.postMessage({type:"GV_OPEN", url:gvUrl},"*");
-      };
-    }
-    catch(e){
-      document.getElementById("phoneDisplay").innerHTML = "error";
-      console.log("ERROR:", e);
-    }
-  })
-  .catch(function(err){
-    console.log("PROMISE ERROR:", err);
-    document.getElementById("phoneDisplay").innerHTML = "Failed to get info";
-  });
+      catch(e){
+        document.getElementById("phoneDisplay").innerHTML = "error";
+        dbg("CATCH inside then", e && e.message ? e.message : e);
+      }
+    })
+    .catch(function(err){
+      document.getElementById("phoneDisplay").innerHTML = "getPageInfo failed";
+      dbg("getPageInfo ERROR", err && err.message ? err.message : err);
+    });
 });
 
-ZOHO.embeddedApp.init();
+ZOHO.embeddedApp.init()
+  .then(function(){
+    dbg("init", "ok");
+  })
+  .catch(function(err){
+    document.getElementById("phoneDisplay").innerHTML = "init failed";
+    dbg("init ERROR", err && err.message ? err.message : err);
+  });
 </script>
+
+</body>
+</html>
