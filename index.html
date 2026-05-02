@@ -4,31 +4,36 @@
   <script src="https://live.zwidgets.com/js-sdk/1.0/ZohoEmbededAppSDK.min.js"></script>
 </head>
 <body>
-
 <script>
 ZOHO.embeddedApp.on("PageLoad", async function(data) {
-
   const record = await ZOHO.CRM.API.getRecord({
     Entity: data.Entity,
     RecordID: data.EntityId
   });
-
   const phone = record.data[0].Phone;
-
-  chrome.runtime.sendMessage(
-  "TU_EXTENSION_ID",
-  { action: "call", phone: phone },
-  function() {
-    setTimeout(() => {
-      ZOHO.CRM.BLUEPRINT.proceed();
-    }, 500);
+  
+  // 🔥 VERIFICA que el teléfono existe
+  if (!phone) {
+    console.error("No hay teléfono en el lead");
+    ZOHO.CRM.BLUEPRINT.proceed();
+    return;
   }
-);
-
+  
+  // 🔥 Limpia el número
+  const cleaned = phone.replace(/\D/g, '');
+  const formatted = cleaned.length === 10 ? "+1" + cleaned : "+" + cleaned;
+  
+  chrome.runtime.sendMessage(
+    "imgmleiaadajaiclmfdeaonenphmlmkb",
+    { action: "call", phone: formatted },
+    function(response) {
+      console.log("Extension response:", response);
+      ZOHO.CRM.BLUEPRINT.proceed();
+    }
+  );
 });
 
 ZOHO.embeddedApp.init();
 </script>
-
 </body>
 </html>
