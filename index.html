@@ -1,31 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="https://live.zwidgets.com/js-sdk/1.0/ZohoEmbededAppSDK.min.js"></script>
+  <script src="https://live.zwidgets.com/js-sdk/1.5/ZohoEmbededAppSDK.min.js"></script>
 </head>
 <body>
+
 <script>
 ZOHO.embeddedApp.on("PageLoad", async function(data) {
+
   const record = await ZOHO.CRM.API.getRecord({
     Entity: data.Entity,
     RecordID: data.EntityId
   });
+
   const phone = record.data[0].Phone;
-  
+
   if (phone) {
     chrome.runtime.sendMessage(
       "imgmleiaadajaiclmfdeaonenphmlmkb",
       { action: "call", phone: phone }
     );
   }
-  
-  // 🔥 Cierra el widget (no Blueprint)
-  ZOHO.embeddedApp.request({
-    "action": "close"
-  });
+
+  // 🔥 Cerrar widget correctamente
+  setTimeout(() => {
+    ZOHO.embeddedApp.request({ action: "close" });
+  }, 300);
+
 });
 
 ZOHO.embeddedApp.init();
 </script>
+
 </body>
 </html>
