@@ -4,32 +4,44 @@
   <script src="https://live.zwidgets.com/js-sdk/1.0/ZohoEmbededAppSDK.min.js"></script>
 </head>
 <body>
+
 <script>
 ZOHO.embeddedApp.on("PageLoad", async function(data) {
+
   const record = await ZOHO.CRM.API.getRecord({
     Entity: data.Entity,
     RecordID: data.EntityId
   });
+
   const phone = record.data[0].Phone;
-  
+
+  if (!phone) {
+    ZOHO.CRM.BLUEPRINT.proceed();
+    return;
+  }
+
+  const cleaned = phone.replace(/\D/g, '');
+  const formatted = cleaned.length === 10 ? "+1" + cleaned : "+" + cleaned;
+
   chrome.runtime.sendMessage(
-    "imgmleiaadajaiclmfdeaonenphmlmkb",
-    { action: "call", phone: phone },
-    function() {
-      // 🔥 Cierra el modal PRIMERO
-      ZOHO.embeddedApp.request({
-        "action": "close"
-      });
-      
-      // 🔥 DESPUÉS avanza la transición
-      setTimeout(function() {
+    "TU_EXTENSION_ID",
+    { action: "call", phone: formatted },
+    function(response) {
+      setTimeout(() => {
         ZOHO.CRM.BLUEPRINT.proceed();
-      }, 100);
+        try {
+          ZOHO.CRM.UI.Popup.close();
+        } catch (e) {
+          window.close();
+        }
+      }, 300);
     }
   );
+
 });
 
 ZOHO.embeddedApp.init();
 </script>
+
 </body>
 </html>
