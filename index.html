@@ -4,35 +4,33 @@
   <script src="https://live.zwidgets.com/js-sdk/1.0/ZohoEmbededAppSDK.min.js"></script>
 </head>
 <body>
-
 <script>
 ZOHO.embeddedApp.on("PageLoad", async function(data) {
-
+  console.log("1. PageLoad disparado");
+  
   const record = await ZOHO.CRM.API.getRecord({
     Entity: data.Entity,
     RecordID: data.EntityId
   });
-
+  console.log("2. Record obtenido");
+  
   const phone = record.data[0].Phone;
-
-  chrome.runtime.sendMessage(
-    "imgmleiaadajaiclmfdeaonenphmlmkb",
-    { action: "call", phone: phone }
-  );
-
-  // 🔥 ORDEN CRÍTICO
-  setTimeout(() => {
-    try {
-      ZOHO.CRM.UI.Popup.close();   // 1. cerrar modal
-    } catch(e) {}
-
-    ZOHO.CRM.BLUEPRINT.proceed();  // 2. continuar transición
-  }, 300);
-
+  console.log("3. Phone:", phone);
+  
+  if (phone) {
+    chrome.runtime.sendMessage(
+      "imgmleiaadajaiclmfdeaonenphmlmkb",
+      { action: "call", phone: phone }
+    );
+    console.log("4. Mensaje enviado a extensión");
+  }
+  
+  console.log("5. Llamando BLUEPRINT.proceed()");
+  ZOHO.CRM.BLUEPRINT.proceed();
+  console.log("6. BLUEPRINT.proceed() completó");
 });
 
 ZOHO.embeddedApp.init();
 </script>
-
 </body>
 </html>
