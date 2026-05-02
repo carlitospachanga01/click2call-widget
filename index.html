@@ -12,23 +12,19 @@ ZOHO.embeddedApp.on("PageLoad", async function(data) {
   });
   const phone = record.data[0].Phone;
   
-  // 🔥 VERIFICA que el teléfono existe
-  if (!phone) {
-    console.error("No hay teléfono en el lead");
-    ZOHO.CRM.BLUEPRINT.proceed();
-    return;
-  }
-  
-  // 🔥 Limpia el número
-  const cleaned = phone.replace(/\D/g, '');
-  const formatted = cleaned.length === 10 ? "+1" + cleaned : "+" + cleaned;
-  
   chrome.runtime.sendMessage(
     "imgmleiaadajaiclmfdeaonenphmlmkb",
-    { action: "call", phone: formatted },
-    function(response) {
-      console.log("Extension response:", response);
-      ZOHO.CRM.BLUEPRINT.proceed();
+    { action: "call", phone: phone },
+    function() {
+      // 🔥 Cierra el modal PRIMERO
+      ZOHO.embeddedApp.request({
+        "action": "close"
+      });
+      
+      // 🔥 DESPUÉS avanza la transición
+      setTimeout(function() {
+        ZOHO.CRM.BLUEPRINT.proceed();
+      }, 100);
     }
   );
 });
