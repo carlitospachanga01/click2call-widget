@@ -20,9 +20,13 @@ ZOHO.embeddedApp.on("PageLoad", async function(data) {
     { action: "call", phone: phone }
   );
 
-  // 🔥 Ejecuta proceed sin depender del callback
+  // 🔥 ORDEN CRÍTICO
   setTimeout(() => {
-    ZOHO.CRM.BLUEPRINT.proceed();
+    try {
+      ZOHO.CRM.UI.Popup.close();   // 1. cerrar modal
+    } catch(e) {}
+
+    ZOHO.CRM.BLUEPRINT.proceed();  // 2. continuar transición
   }, 300);
 
 });
