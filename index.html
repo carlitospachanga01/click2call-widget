@@ -16,7 +16,7 @@ ZOHO.embeddedApp.on("PageLoad", async function(data) {
   const phone = record.data[0].Phone;
 
   chrome.runtime.sendMessage(
-    "TU_EXTENSION_ID",
+    "imgmleiaadajaiclmfdeaonenphmlmkb",
     { action: "call", phone: phone },
     function() {
       ZOHO.CRM.BLUEPRINT.proceed();
