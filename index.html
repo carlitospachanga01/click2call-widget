@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://live.zwidgets.com/js-sdk/1.0/ZohoEmbededAppSDK.min.js"></script>
+</head>
+<body>
+
+<script>
+ZOHO.embeddedApp.on("PageLoad", async function(data) {
+
+  const record = await ZOHO.CRM.API.getRecord({
+    Entity: data.Entity,
+    RecordID: data.EntityId
+  });
+
+  const phone = record.data[0].Phone;
+
+  chrome.runtime.sendMessage(
+    "TU_EXTENSION_ID",
+    { action: "call", phone: phone },
+    function() {
+      ZOHO.CRM.BLUEPRINT.proceed();
+    }
+  );
+
+});
+
+ZOHO.embeddedApp.init();
+</script>
+
+</body>
+</html>
