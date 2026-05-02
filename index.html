@@ -16,12 +16,14 @@ ZOHO.embeddedApp.on("PageLoad", async function(data) {
   const phone = record.data[0].Phone;
 
   chrome.runtime.sendMessage(
-    "imgmleiaadajaiclmfdeaonenphmlmkb",
-    { action: "call", phone: phone },
-    function() {
+  "TU_EXTENSION_ID",
+  { action: "call", phone: phone },
+  function() {
+    setTimeout(() => {
       ZOHO.CRM.BLUEPRINT.proceed();
-    }
-  );
+    }, 500);
+  }
+);
 
 });
 
